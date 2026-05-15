@@ -7,12 +7,15 @@ use Illuminate\Support\Facades\Cache;
 
 class ExchangeRateService
 {
-    protected string $baseUrl;
-    protected string $apiKey;
+    protected string $baseUrl = '';
+    protected string $apiKey = '';
 
     public function __construct()
     {
-        $this->apiKey  = config('services.exchangerate.key') ?? env('EXCHANGERATE_API_KEY', '');
+        $key = config('services.exchangerate.key')
+            ?? env('EXCHANGERATE_API_KEY')
+            ?? '';
+        $this->apiKey  = (string) $key;
         $this->baseUrl = 'https://v6.exchangerate-api.com/v6/' . $this->apiKey;
     }
 
