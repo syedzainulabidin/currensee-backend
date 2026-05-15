@@ -12,7 +12,7 @@ class ExchangeRateService
 
     public function __construct()
     {
-        $this->apiKey  = config('services.exchangerate.key');
+        $this->apiKey  = config('services.exchangerate.key') ?? env('EXCHANGERATE_API_KEY', '');
         $this->baseUrl = 'https://v6.exchangerate-api.com/v6/' . $this->apiKey;
     }
 
