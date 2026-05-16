@@ -9,7 +9,7 @@ nixPkgs = [
   "php82Extensions.curl",
   "php82Extensions.zip",
   "php82Extensions.gd",
-  "composer"
+  "php82Packages.composer"
 ]
 
 [phases.install]
