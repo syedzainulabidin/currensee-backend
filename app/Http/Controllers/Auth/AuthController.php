@@ -8,7 +8,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -75,6 +77,53 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         return response()->json($request->user());
+    }
+
+    public function googleAuth(Request $request)
+    {
+        $data = $request->validate(['access_token' => 'required|string']);
+
+        // Fetch user info from Google using the access token
+        $response = Http::withToken($data['access_token'])
+            ->get('https://www.googleapis.com/oauth2/v3/userinfo');
+
+        if (!$response->ok()) {
+            throw ValidationException::withMessages(['access_token' => 'Invalid Google token.']);
+        }
+
+        $payload = $response->json();
+
+        // Find or create the user
+        $isNew = false;
+        $user  = User::where('google_id', $payload['sub'])
+                     ->orWhere('email', $payload['email'])
+                     ->first();
+
+        if (!$user) {
+            $isNew = true;
+            $user  = User::create([
+                'name'             => $payload['name'] ?? $payload['email'],
+                'email'            => $payload['email'],
+                'google_id'        => $payload['sub'],
+                'password'         => Hash::make(Str::random(32)),
+                'default_currency' => 'USD',
+                'role'             => 'user',
+            ]);
+        } else {
+            // Link Google ID if signing in via Google for the first time
+            if (!$user->google_id) {
+                $user->update(['google_id' => $payload['sub']]);
+            }
+        }
+
+        $token = $user->createToken('app_token')->plainTextToken;
+
+        // Send welcome email only to new users
+        if ($isNew) {
+            try { Mail::to($user->email)->send(new WelcomeMail($user)); } catch (\Throwable) {}
+        }
+
+        return response()->json(['user' => $user, 'token' => $token]);
     }
 
     public function updatePreferences(Request $request)

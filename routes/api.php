@@ -15,8 +15,9 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login',    [AuthController::class, 'login']);
+Route::post('/register',     [AuthController::class, 'register']);
+Route::post('/login',        [AuthController::class, 'login']);
+Route::post('/auth/google',  [AuthController::class, 'googleAuth']);
 
 // Currency list and rates are public
 Route::get('/currencies',                              [CurrencyController::class, 'index']);
