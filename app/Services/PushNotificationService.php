@@ -80,7 +80,13 @@ class PushNotificationService
     protected function getAccessToken(): ?string
     {
         try {
-            $credentials = json_decode(file_get_contents($this->credentialsPath), true);
+            // Prefer env var (for cloud deployments), fall back to file
+            $raw = env('FIREBASE_CREDENTIALS_JSON');
+            if ($raw) {
+                $credentials = json_decode($raw, true);
+            } else {
+                $credentials = json_decode(file_get_contents($this->credentialsPath), true);
+            }
 
             $now    = time();
             $expiry = $now + 3600;
