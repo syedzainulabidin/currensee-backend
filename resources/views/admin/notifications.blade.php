@@ -1,166 +1,224 @@
 @extends('layouts.admin')
-@section('title', 'Notifications')
+@section('title', 'Send Notification')
 
 @section('content')
 
-    <!-- Header -->
-    <div class="animate-in" style="margin-bottom:20px;">
-        <div
-            style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:4px;">
-            &gt; NOTIFICATION_BROADCAST
-        </div>
-        <h1 style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--text);">
-            Notifications
-        </h1>
+<div class="page-header">
+    <div>
+        <div class="page-title">Push Notifications</div>
+        <div class="page-subtitle">Send a notification to one user or everyone</div>
     </div>
+</div>
 
-    <!-- System Status -->
-    <div class="cyber-card animate-in stagger-1" style="margin-bottom:20px;">
-        <div class="section-title" style="margin-bottom:12px;">SYSTEM STATUS</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div>
-                <div
-                    style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px;">
-                    FCM STATUS</div>
-                <span class="badge badge-green" style="animation:pulse-glow 2s ease-in-out infinite;">● CONNECTED</span>
-            </div>
-            <div>
-                <div
-                    style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px;">
-                    TOTAL USERS</div>
-                <div style="font-family:'Black Ops One',cursive;font-size:1.1rem;color:var(--green);">
-                    {{ \App\Models\User::where('role', 'user')->count() }}
+{{-- Stats --}}
+<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px;max-width:480px;">
+    <div class="stat-card">
+        <div>
+            <div class="stat-card-value text-green">{{ $usersWithTokens }}</div>
+            <div class="stat-card-label">Reachable Users</div>
+            <div class="stat-card-delta text-dim">Have a device registered</div>
+        </div>
+        <div class="stat-card-icon" style="background:var(--green-dim);">
+            <i data-lucide="users" style="color:var(--green);width:18px;height:18px;"></i>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-card-value">{{ $totalTokens }}</div>
+            <div class="stat-card-label">Registered Devices</div>
+            <div class="stat-card-delta text-dim">Across all users</div>
+        </div>
+        <div class="stat-card-icon" style="background:rgba(99,102,241,0.1);">
+            <i data-lucide="smartphone" style="color:var(--blue);width:18px;height:18px;"></i>
+        </div>
+    </div>
+</div>
+
+{{-- Send Form --}}
+<div class="card" style="max-width:640px;">
+    <div class="card-header">
+        <div>
+            <div class="card-title">Compose Notification</div>
+            <div class="card-subtitle">Fill in the details and choose who receives it</div>
+        </div>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ route('admin.notifications.send') }}">
+            @csrf
+
+            {{-- Target --}}
+            <div style="margin-bottom:20px;">
+                <label style="display:block;font-size:12.5px;font-weight:600;color:var(--text-2);margin-bottom:10px;">Send To</label>
+                <div style="display:flex;gap:8px;">
+                    <label style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;flex:1;">
+                        <input type="radio" name="target" value="all" checked
+                               onchange="toggleTarget('all')"
+                               style="accent-color:var(--green);width:15px;height:15px;">
+                        <div>
+                            <div style="font-weight:600;font-size:13px;">All Users</div>
+                            <div style="font-size:11.5px;color:var(--text-2);">{{ $usersWithTokens }} reachable</div>
+                        </div>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;flex:1;">
+                        <input type="radio" name="target" value="user"
+                               onchange="toggleTarget('user')"
+                               style="accent-color:var(--green);width:15px;height:15px;">
+                        <div>
+                            <div style="font-weight:600;font-size:13px;">Specific User</div>
+                            <div style="font-size:11.5px;color:var(--text-2);">Search by name or email</div>
+                        </div>
+                    </label>
                 </div>
             </div>
-            <div>
-                <div
-                    style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px;">
-                    PUSH OPTED-IN</div>
-                <div style="font-family:'Black Ops One',cursive;font-size:1.1rem;color:var(--green);">
-                    {{ \App\Models\User::where('role', 'user')->whereJsonDoesntContain('preferences->notifications->push_enabled', false)->count() }}
+
+            {{-- User picker (shown only when target = user) --}}
+            <div id="user-picker" style="margin-bottom:20px;display:none;">
+                <label style="display:block;font-size:12.5px;font-weight:600;color:var(--text-2);margin-bottom:7px;">User</label>
+                <div style="position:relative;">
+                    <div class="input-group has-icon-left">
+                        <div class="input-icon"><i data-lucide="search"></i></div>
+                        <input type="text" id="user-search" placeholder="Type name or email…" autocomplete="off">
+                    </div>
+                    <div id="user-results"
+                         style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;z-index:50;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
                 </div>
+                <input type="hidden" name="user_id" id="user-id-input">
+                <div id="selected-user" style="display:none;margin-top:8px;padding:8px 12px;background:var(--green-dim);border:1px solid var(--green-border);border-radius:8px;font-size:13px;color:var(--green);"></div>
             </div>
-            <div>
-                <div
-                    style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px;">
-                    ACTIVE ALERTS</div>
-                <div style="font-family:'Black Ops One',cursive;font-size:1.1rem;color:#ffcc00;">
-                    {{ \App\Models\RateAlert::where('is_active', true)->count() }}
-                </div>
+
+            {{-- Type --}}
+            <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:12.5px;font-weight:600;color:var(--text-2);margin-bottom:7px;">Type</label>
+                <select name="type">
+                    <option value="announcement">📢 Announcement</option>
+                    <option value="alert">🔔 Alert</option>
+                    <option value="update">✨ Update</option>
+                    <option value="promo">🎁 Promo</option>
+                </select>
             </div>
-        </div>
-    </div>
 
-    <!-- Broadcast Form -->
-    <div class="section-title animate-in stagger-2">SEND BROADCAST</div>
-
-    <div class="cyber-card animate-in stagger-2" style="margin-bottom:20px;">
-        <div
-            style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:16px;padding:8px;border:1px solid rgba(255,204,0,0.2);background:rgba(255,204,0,0.03);">
-            ⚠ FCM INTEGRATION REQUIRED — Connect Firebase Cloud Messaging in your .env to enable push delivery.
-        </div>
-
-        <div style="margin-bottom:16px;">
-            <label class="cyber-label">// NOTIFICATION TITLE</label>
-            <input type="text" class="cyber-input" id="notif-title" placeholder="e.g. RATE ALERT: USD/PKR"
-                maxlength="65">
-        </div>
-
-        <div style="margin-bottom:16px;">
-            <label class="cyber-label">// MESSAGE BODY</label>
-            <textarea class="cyber-input" id="notif-body" rows="3" placeholder="Your message to all users..." maxlength="200"
-                style="resize:vertical;"></textarea>
-            <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);margin-top:4px;">
-                <span id="char-count">0</span>/200 CHARS
+            {{-- Title --}}
+            <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:12.5px;font-weight:600;color:var(--text-2);margin-bottom:7px;">
+                    Title <span style="color:var(--text-3);font-weight:400;">(max 100 chars)</span>
+                </label>
+                <input type="text" name="title" placeholder="e.g. Market Alert 🔔"
+                       maxlength="100" value="{{ old('title') }}" required>
+                @error('title')
+                    <div style="color:var(--red);font-size:12px;margin-top:4px;">{{ $message }}</div>
+                @enderror
             </div>
-        </div>
 
-        <div style="margin-bottom:16px;">
-            <label class="cyber-label">// TARGET AUDIENCE</label>
-            <select class="cyber-input" id="notif-target"
-                style="appearance:none;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23AAFF00' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E\");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px;cursor:pointer;">
-                <option value="all">ALL USERS</option>
-                <option value="push_enabled">PUSH ENABLED ONLY</option>
-            </select>
-        </div>
+            {{-- Body --}}
+            <div style="margin-bottom:24px;">
+                <label style="display:block;font-size:12.5px;font-weight:600;color:var(--text-2);margin-bottom:7px;">
+                    Message <span style="color:var(--text-3);font-weight:400;">(max 500 chars)</span>
+                </label>
+                <textarea name="body" rows="4" maxlength="500" required
+                          placeholder="e.g. USD/PKR just crossed 280. Tap to check your alerts."
+                          style="resize:vertical;">{{ old('body') }}</textarea>
+                <div style="font-size:11.5px;color:var(--text-3);margin-top:5px;" id="char-counter">0 / 500</div>
+                @error('body')
+                    <div style="color:var(--red);font-size:12px;margin-top:4px;">{{ $message }}</div>
+                @enderror
+            </div>
 
-        <button class="btn-green" onclick="sendBroadcast()" id="send-btn">
-            BROADCAST NOTIFICATION
-        </button>
+            <div style="display:flex;justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">
+                    <i data-lucide="send"></i> Send Notification
+                </button>
+            </div>
 
-        <div id="send-status"
-            style="display:none;margin-top:12px;font-family:'Share Tech Mono',monospace;font-size:0.65rem;letter-spacing:1px;padding:10px;border:1px solid var(--border);">
-        </div>
+        </form>
     </div>
-
-    <!-- Info Cards -->
-    <div class="section-title animate-in stagger-3">INTEGRATION GUIDE</div>
-
-    <div class="cyber-card animate-in stagger-3" style="margin-bottom:10px;">
-        <div
-            style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--green);letter-spacing:1px;margin-bottom:8px;">
-            STEP 01 — FIREBASE SETUP</div>
-        <div style="font-size:0.78rem;color:var(--text-dim);line-height:1.6;">
-            Create a Firebase project → Enable Cloud Messaging → Download service account JSON → Add credentials to <span
-                style="color:var(--green);font-family:'Share Tech Mono',monospace;">.env</span>
-        </div>
-    </div>
-
-    <div class="cyber-card animate-in stagger-4" style="margin-bottom:10px;">
-        <div
-            style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--green);letter-spacing:1px;margin-bottom:8px;">
-            STEP 02 — RATE ALERTS (AUTO)</div>
-        <div style="font-size:0.78rem;color:var(--text-dim);line-height:1.6;">
-            Create a scheduled Laravel command that runs every hour, checks active alerts against live rates from <span
-                style="color:var(--green);font-family:'Share Tech Mono',monospace;">ExchangeRateService</span>, and fires
-            FCM push when threshold is hit.
-        </div>
-    </div>
-
-    <div class="cyber-card animate-in stagger-5">
-        <div
-            style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--green);letter-spacing:1px;margin-bottom:8px;">
-            STEP 03 — FLUTTER APP</div>
-        <div style="font-size:0.78rem;color:var(--text-dim);line-height:1.6;">
-            Add <span style="color:var(--green);font-family:'Share Tech Mono',monospace;">firebase_messaging</span> package
-            to Flutter. Register device tokens on login → store in user preferences JSON column.
-        </div>
-    </div>
-
-@endsection
+</div>
 
 @push('scripts')
-    <script>
-        document.getElementById('notif-body').addEventListener('input', function() {
-            document.getElementById('char-count').textContent = this.value.length;
-        });
+<script>
+// Target toggle
+function toggleTarget(val) {
+    document.getElementById('user-picker').style.display = val === 'user' ? 'block' : 'none';
+    if (val !== 'user') {
+        document.getElementById('user-id-input').value = '';
+        document.getElementById('selected-user').style.display = 'none';
+        document.getElementById('user-search').value = '';
+    }
+    lucide.createIcons();
+}
 
-        async function sendBroadcast() {
-            const title = document.getElementById('notif-title').value.trim();
-            const body = document.getElementById('notif-body').value.trim();
-            const status = document.getElementById('send-status');
-            const btn = document.getElementById('send-btn');
+// Character counter
+const bodyTA = document.querySelector('textarea[name="body"]');
+const counter = document.getElementById('char-counter');
+if (bodyTA) {
+    bodyTA.addEventListener('input', () => { counter.textContent = bodyTA.value.length + ' / 500'; });
+}
 
-            if (!title || !body) {
-                status.style.display = 'block';
-                status.style.color = '#ff4444';
-                status.style.borderColor = 'rgba(255,68,68,0.4)';
-                status.textContent = '> ERROR: TITLE AND MESSAGE REQUIRED';
-                return;
-            }
+// User search
+const searchInput = document.getElementById('user-search');
+const resultsBox  = document.getElementById('user-results');
+const hiddenInput = document.getElementById('user-id-input');
+const selectedBox = document.getElementById('selected-user');
 
-            btn.textContent = 'TRANSMITTING...';
-            btn.disabled = true;
+let timer;
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timer);
+        const q = this.value.trim();
+        if (q.length < 2) { resultsBox.style.display = 'none'; return; }
+        timer = setTimeout(async () => {
+            try {
+                const res  = await fetch(`{{ route('admin.users') }}?search=${encodeURIComponent(q)}`, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                // Users page returns HTML — so we use a separate JSON search endpoint
+                // For now, we show a note to use the dedicated endpoint
+                renderFallback();
+            } catch { resultsBox.style.display = 'none'; }
+        }, 300);
+    });
+}
 
-            // Placeholder — wire to your FCM endpoint when ready
-            setTimeout(() => {
-                status.style.display = 'block';
-                status.style.color = '#ffcc00';
-                status.style.borderColor = 'rgba(255,204,0,0.4)';
-                status.textContent = '> FCM NOT CONFIGURED — Connect Firebase to enable delivery.';
-                btn.textContent = 'BROADCAST NOTIFICATION';
-                btn.disabled = false;
-            }, 1000);
-        }
-    </script>
+function renderFallback() {
+    // Inline user search — calls a small JSON endpoint we'll add
+    const q = searchInput.value.trim();
+    fetch(`/admin/users/json-search?q=${encodeURIComponent(q)}`)
+        .then(r => r.json())
+        .then(data => renderResults(data.users || []))
+        .catch(() => resultsBox.style.display = 'none');
+}
+
+function renderResults(users) {
+    if (!users.length) {
+        resultsBox.innerHTML = '<div style="padding:12px 16px;color:var(--text-2);font-size:13px;">No users found</div>';
+    } else {
+        resultsBox.innerHTML = users.slice(0,6).map(u => `
+            <div onclick="selectUser(${u.id},'${esc(u.name)}','${esc(u.email)}')"
+                 style="padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s;"
+                 onmouseover="this.style.background='var(--surface3)'"
+                 onmouseout="this.style.background=''">
+                <div style="font-weight:600;font-size:13px;">${esc(u.name)}</div>
+                <div style="font-size:11.5px;color:var(--text-2);">${esc(u.email)}</div>
+            </div>`).join('');
+    }
+    resultsBox.style.display = 'block';
+}
+
+function selectUser(id, name, email) {
+    hiddenInput.value = id;
+    searchInput.value = name;
+    selectedBox.textContent  = `✓ Sending to ${name} (${email})`;
+    selectedBox.style.display = 'block';
+    resultsBox.style.display  = 'none';
+}
+
+function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.addEventListener('click', e => {
+    if (!e.target.closest('#user-picker')) resultsBox.style.display = 'none';
+});
+</script>
 @endpush
+
+@endsection

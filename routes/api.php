@@ -31,8 +31,7 @@ Route::post('/convert', [ConversionController::class, 'convert']);
 Route::get('/news',              [NewsController::class, 'index']);
 Route::get('/news/{currency}',   [NewsController::class, 'byCurrency']);
 
-// Feedback submit is public (guests can submit too)
-Route::post('/feedback', [FeedbackController::class, 'store']);
+// Feedback submit is public — user linked via optional token below
 
 /*
 |--------------------------------------------------------------------------
@@ -58,10 +57,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/alerts/{id}',    [AlertController::class, 'update']);
     Route::delete('/alerts/{id}', [AlertController::class, 'destroy']);
 
-    // Notification preferences
-    Route::get('/notifications/preferences', [NotificationController::class, 'getPreferences']);
-    Route::put('/notifications/preferences', [NotificationController::class, 'updatePreferences']);
+    // Notification preferences + FCM device token
+    Route::get('/notifications/preferences',  [NotificationController::class, 'getPreferences']);
+    Route::put('/notifications/preferences',  [NotificationController::class, 'updatePreferences']);
+    Route::post('/notifications/device-token',[NotificationController::class, 'saveDeviceToken']);
 
-    // My feedback
-    Route::get('/feedback', [FeedbackController::class, 'myFeedback']);
+    // Feedback — submit (auth required so user is always linked) + view own
+    Route::post('/feedback', [FeedbackController::class, 'store']);
+    Route::get('/feedback',  [FeedbackController::class, 'myFeedback']);
 });

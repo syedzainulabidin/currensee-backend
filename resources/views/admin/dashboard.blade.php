@@ -3,161 +3,172 @@
 
 @section('content')
 
-    <!-- Page Header -->
-    <div class="animate-in" style="margin-bottom:20px;">
-        <div
-            style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:4px;">
-            &gt; SYSTEM_OVERVIEW
+{{-- Page Header --}}
+<div class="page-header">
+    <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-subtitle">Welcome back — here's what's happening</div>
+    </div>
+    <div class="page-actions">
+        <span style="font-size:12px;color:var(--text-2);">{{ now()->format('l, d M Y') }}</span>
+    </div>
+</div>
+
+{{-- Stats --}}
+<div class="stats-grid">
+
+    <div class="stat-card">
+        <div>
+            <div class="stat-card-value">{{ number_format($stats['total_users']) }}</div>
+            <div class="stat-card-label">Total Users</div>
+            <div class="stat-card-delta text-green">+{{ $stats['new_users_today'] }} today</div>
         </div>
-        <h1 style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--text);">
-            Dashboard
-        </h1>
+        <div class="stat-card-icon" style="background:var(--green-dim);">
+            <i data-lucide="users" style="color:var(--green);width:18px;height:18px;"></i>
+        </div>
     </div>
 
-    <!-- Stats Grid -->
-    <div class="section-title animate-in stagger-1">LIVE METRICS</div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
-
-        <div class="cyber-card animate-in stagger-1">
-            <div class="stat-value">{{ number_format($stats['total_users']) }}</div>
-            <div class="stat-label">TOTAL USERS</div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-card-value">{{ number_format($stats['conversions_today']) }}</div>
+            <div class="stat-card-label">Conversions Today</div>
+            <div class="stat-card-delta text-dim">{{ number_format($stats['total_conversions']) }} all time</div>
         </div>
-
-        <div class="cyber-card animate-in stagger-2">
-            <div class="stat-value" style="color:#fff;text-shadow:0 0 10px rgba(255,255,255,0.3);">
-                +{{ $stats['new_users_today'] }}
-            </div>
-            <div class="stat-label">NEW TODAY</div>
+        <div class="stat-card-icon" style="background:rgba(99,102,241,0.1);">
+            <i data-lucide="arrow-left-right" style="color:var(--blue);width:18px;height:18px;"></i>
         </div>
-
-        <div class="cyber-card animate-in stagger-3">
-            <div class="stat-value">{{ number_format($stats['conversions_today']) }}</div>
-            <div class="stat-label">CONVERSIONS TODAY</div>
-        </div>
-
-        <div class="cyber-card animate-in stagger-4">
-            <div class="stat-value" style="font-size:1.5rem;">
-                {{ number_format($stats['total_conversions']) }}
-            </div>
-            <div class="stat-label">TOTAL CONVERSIONS</div>
-        </div>
-
-        <div class="cyber-card animate-in stagger-5">
-            <div class="stat-value" style="font-size:1.5rem;color:#ffcc00;text-shadow:0 0 15px rgba(255,204,0,0.4);">
-                {{ $stats['active_alerts'] }}
-            </div>
-            <div class="stat-label">ACTIVE ALERTS</div>
-        </div>
-
-        <div class="cyber-card animate-in stagger-6"
-            style="border-color:{{ $stats['new_feedback'] > 0 ? 'rgba(255,68,68,0.4)' : 'var(--border)' }}">
-            <div class="stat-value"
-                style="font-size:1.5rem;color:{{ $stats['new_feedback'] > 0 ? '#ff4444' : 'var(--green)' }};text-shadow:0 0 15px {{ $stats['new_feedback'] > 0 ? 'rgba(255,68,68,0.4)' : 'var(--green-glow)' }};">
-                {{ $stats['new_feedback'] }}
-            </div>
-            <div class="stat-label">NEW FEEDBACK</div>
-        </div>
-
     </div>
 
-    <!-- Recent Users -->
-    <div class="section-title animate-in">RECENT USERS</div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-card-value">{{ $stats['active_alerts'] }}</div>
+            <div class="stat-card-label">Active Rate Alerts</div>
+            <div class="stat-card-delta text-dim">Watching live rates</div>
+        </div>
+        <div class="stat-card-icon" style="background:var(--yellow-dim);">
+            <i data-lucide="bell" style="color:var(--yellow);width:18px;height:18px;"></i>
+        </div>
+    </div>
 
-    <div class="cyber-card animate-in" style="padding:0;overflow:hidden;">
-        @if ($recentUsers->isEmpty())
-            <div
-                style="padding:20px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--text-dim);">
-                NO_DATA_FOUND
+    <div class="stat-card">
+        <div>
+            <div class="stat-card-value {{ $stats['new_feedback'] > 0 ? 'text-red' : '' }}">{{ $stats['new_feedback'] }}</div>
+            <div class="stat-card-label">Unread Feedback</div>
+            <div class="stat-card-delta {{ $stats['new_feedback'] > 0 ? 'text-red' : 'text-dim' }}">
+                {{ $stats['new_feedback'] > 0 ? 'Needs attention' : 'All cleared' }}
+            </div>
+        </div>
+        <div class="stat-card-icon" style="background:{{ $stats['new_feedback'] > 0 ? 'var(--red-dim)' : 'var(--surface3)' }};">
+            <i data-lucide="message-square" style="color:{{ $stats['new_feedback'] > 0 ? 'var(--red)' : 'var(--text-2)' }};width:18px;height:18px;"></i>
+        </div>
+    </div>
+
+</div>
+
+{{-- Recent Tables Side-by-Side --}}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+    {{-- Recent Users --}}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Recent Registrations</div>
+                <div class="card-subtitle">Last 5 new users</div>
+            </div>
+            <a href="{{ route('admin.users') }}" class="btn btn-ghost btn-sm">
+                View all <i data-lucide="arrow-right" style="width:13px;height:13px;"></i>
+            </a>
+        </div>
+
+        @if($recentUsers->isEmpty())
+            <div class="empty-state">
+                <div class="empty-icon"><i data-lucide="users"></i></div>
+                <div class="empty-title">No users yet</div>
+                <div class="empty-desc">Users will appear here once they register.</div>
             </div>
         @else
-            <table class="cyber-table">
-                <thead>
-                    <tr>
-                        <th>NAME</th>
-                        <th>CURRENCY</th>
-                        <th>JOINED</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($recentUsers as $user)
+            <div class="table-wrap">
+                <table>
+                    <thead>
                         <tr>
-                            <td>
-                                <div style="font-weight:500;color:var(--text);font-size:0.8rem;">
-                                    {{ Str::limit($user->name, 12) }}</div>
-                                <div
-                                    style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);">
-                                    {{ Str::limit($user->email, 16) }}</div>
-                            </td>
-                            <td>
-                                <span class="badge badge-green">{{ $user->default_currency }}</span>
-                            </td>
-                            <td style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);">
-                                {{ $user->created_at->diffForHumans(null, true) }}
-                            </td>
+                            <th>User</th>
+                            <th>Currency</th>
+                            <th>Joined</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach($recentUsers as $user)
+                            <tr>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:10px;">
+                                        <div class="avatar" style="background:var(--green-dim);color:var(--green);">
+                                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                                        </div>
+                                        <div>
+                                            <div style="font-weight:600;font-size:13px;">{{ $user->name }}</div>
+                                            <div style="font-size:11.5px;color:var(--text-2);" class="truncate">{{ Str::limit($user->email, 24) }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge badge-green">{{ $user->default_currency }}</span></td>
+                                <td style="color:var(--text-2);font-size:12px;white-space:nowrap;">{{ $user->created_at->diffForHumans() }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endif
     </div>
 
-    <a href="{{ route('admin.users') }}" class="btn-outline"
-        style="width:100%;text-align:center;margin-bottom:20px;display:block;">
-        VIEW ALL USERS →
-    </a>
+    {{-- Recent Conversions --}}
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Recent Conversions</div>
+                <div class="card-subtitle">Last 5 currency conversions</div>
+            </div>
+            <a href="{{ route('admin.conversions') }}" class="btn btn-ghost btn-sm">
+                View all <i data-lucide="arrow-right" style="width:13px;height:13px;"></i>
+            </a>
+        </div>
 
-    <!-- Recent Conversions -->
-    <div class="section-title animate-in">RECENT CONVERSIONS</div>
-
-    <div class="cyber-card animate-in" style="padding:0;overflow:hidden;">
-        @if ($recentConversions->isEmpty())
-            <div
-                style="padding:20px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--text-dim);">
-                NO_DATA_FOUND
+        @if($recentConversions->isEmpty())
+            <div class="empty-state">
+                <div class="empty-icon"><i data-lucide="arrow-left-right"></i></div>
+                <div class="empty-title">No conversions yet</div>
+                <div class="empty-desc">Conversions will appear here when users start converting.</div>
             </div>
         @else
-            <table class="cyber-table">
-                <thead>
-                    <tr>
-                        <th>PAIR</th>
-                        <th>AMOUNT</th>
-                        <th>TIME</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($recentConversions as $c)
+            <div class="table-wrap">
+                <table>
+                    <thead>
                         <tr>
-                            <td>
-                                <span style="font-family:'Black Ops One',cursive;font-size:0.8rem;color:var(--green);">
-                                    {{ $c->from_currency }}/{{ $c->to_currency }}
-                                </span>
-                                <div
-                                    style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);">
-                                    {{ $c->user?->name ?? 'GUEST' }}
-                                </div>
-                            </td>
-                            <td>
-                                <div style="font-family:'Black Ops One',cursive;font-size:0.85rem;color:var(--text);">
-                                    {{ number_format($c->amount, 2) }}
-                                </div>
-                                <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--green);">
-                                    = {{ number_format($c->converted_amount, 2) }}
-                                </div>
-                            </td>
-                            <td style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);">
-                                {{ $c->created_at->diffForHumans(null, true) }}
-                            </td>
+                            <th>Pair</th>
+                            <th>Amount → Result</th>
+                            <th>When</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach($recentConversions as $c)
+                            <tr>
+                                <td>
+                                    <span class="font-mono text-green">{{ $c->from_currency }}/{{ $c->to_currency }}</span>
+                                    <div style="font-size:11.5px;color:var(--text-2);margin-top:2px;">{{ $c->user?->name ?? 'Guest' }}</div>
+                                </td>
+                                <td>
+                                    <span style="font-weight:600;">{{ number_format($c->amount, 2) }}</span>
+                                    <span style="color:var(--text-3);margin:0 3px;">→</span>
+                                    <span class="text-green font-semibold">{{ number_format($c->converted_amount, 2) }}</span>
+                                </td>
+                                <td style="color:var(--text-2);font-size:12px;white-space:nowrap;">{{ $c->created_at->diffForHumans() }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endif
     </div>
 
-    <a href="{{ route('admin.conversions') }}" class="btn-outline"
-        style="width:100%;text-align:center;margin-bottom:20px;display:block;">
-        VIEW ALL LOGS →
-    </a>
+</div>
 
 @endsection

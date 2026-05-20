@@ -18,32 +18,35 @@ class NewsService
 
     /**
      * Fetch latest currency/forex news.
-     * Saves to DB and returns collection.
-     * Cached for 1 hour to respect free tier (100 req/day).
+     * API is called at most once per hour (to respect free tier: 100 req/day).
+     * Response is always read from DB so admin deletes are reflected immediately.
      */
     public function getLatestNews(int $limit = 20): array
     {
-        return Cache::remember('currency_news', now()->addHour(), function () use ($limit) {
-            $response = Http::withHeaders([
-                'X-Api-Key' => $this->apiKey,
-            ])->get("{$this->baseUrl}/everything", [
-                'q'        => 'currency exchange forex market',
-                'language' => 'en',
-                'sortBy'   => 'publishedAt',
-                'pageSize' => $limit,
-            ]);
+        // Only hit the external API if the hourly window has expired
+        if (!Cache::has('news_last_fetched')) {
+            try {
+                $response = Http::withHeaders([
+                    'X-Api-Key' => $this->apiKey,
+                ])->get("{$this->baseUrl}/everything", [
+                    'q'        => 'currency exchange forex market',
+                    'language' => 'en',
+                    'sortBy'   => 'publishedAt',
+                    'pageSize' => $limit,
+                ]);
 
-            if ($response->failed()) {
-                // Fall back to DB if API fails
-                return $this->getFromDb($limit);
+                if ($response->successful()) {
+                    $this->saveToDb($response->json('articles') ?? []);
+                }
+            } catch (\Exception) {
+                // Silently fall through — DB will serve whatever is available
             }
 
-            $articles = $response->json('articles') ?? [];
+            Cache::put('news_last_fetched', true, now()->addHour());
+        }
 
-            $this->saveToDb($articles);
-
-            return $this->formatArticles($articles);
-        });
+        // Always serve from DB so admin changes (deletes) are live immediately
+        return $this->getFromDb($limit);
     }
 
     /**

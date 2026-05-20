@@ -2,10 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DeviceToken;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    /**
+     * POST /api/notifications/device-token
+     * Saves or updates the FCM device token for the authenticated user.
+     */
+    public function saveDeviceToken(Request $request)
+    {
+        $data = $request->validate([
+            'token' => 'required|string',
+        ]);
+
+        // updateOrCreate prevents duplicate rows for the same token
+        DeviceToken::updateOrCreate(
+            ['token'   => $data['token']],
+            ['user_id' => $request->user()->id],
+        );
+
+        return response()->json(['message' => 'Device token saved.']);
+    }
+
     /**
      * GET /api/notifications/preferences
      * Returns current notification preferences.

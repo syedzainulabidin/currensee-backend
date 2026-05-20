@@ -24,6 +24,19 @@ class AdminUserController extends Controller
         return view('admin.users', compact('users'));
     }
 
+    public function jsonSearch(Request $request)
+    {
+        $users = User::where('role', 'user')
+            ->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%'.$request->q.'%')
+                  ->orWhere('email', 'like', '%'.$request->q.'%');
+            })
+            ->limit(8)
+            ->get(['id', 'name', 'email']);
+
+        return response()->json(['users' => $users]);
+    }
+
     public function show(int $id)
     {
         $user = User::where('role', 'user')->with([

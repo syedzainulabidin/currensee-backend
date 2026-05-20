@@ -15,13 +15,15 @@ class FeedbackController extends Controller
     {
         $data = $request->validate([
             'message' => 'required|string|min:10|max:2000',
-            'type'    => 'sometimes|in:bug,suggestion,general',
+            'type'    => 'sometimes|in:bug,suggestion,general,feature,other',
+            'rating'  => 'sometimes|integer|min:1|max:5',
         ]);
 
         $feedback = Feedback::create([
             'user_id' => $request->user()?->id,
             'message' => $data['message'],
             'type'    => $data['type'] ?? 'general',
+            'rating'  => $data['rating'] ?? null,
             'status'  => 'new',
         ]);
 

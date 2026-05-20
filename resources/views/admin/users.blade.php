@@ -3,162 +3,141 @@
 
 @section('content')
 
-    <!-- Header -->
-    <div class="animate-in" style="margin-bottom:20px;">
-        <div
-            style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:4px;">
-            &gt; USER_MANAGEMENT
-        </div>
-        <h1 style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--text);">
-            Users
-        </h1>
+<div class="page-header">
+    <div>
+        <div class="page-title">Users</div>
+        <div class="page-subtitle">{{ $users->total() }} registered {{ Str::plural('user', $users->total()) }}</div>
     </div>
+</div>
 
-    <!-- Search -->
-    <div class="animate-in stagger-1" style="margin-bottom:16px;">
-        <form method="GET" action="{{ route('admin.users') }}">
-            <div style="display:flex;gap:8px;">
-                <input type="text" name="search" class="cyber-input" placeholder="SEARCH BY NAME OR EMAIL..."
-                    value="{{ request('search') }}" style="flex:1;">
-                <button type="submit" class="btn-green" style="width:auto;padding:10px 16px;white-space:nowrap;">
-                    SCAN
+<div class="card">
+
+    {{-- Toolbar --}}
+    <form method="GET" action="{{ route('admin.users') }}">
+        <div class="toolbar">
+            <div class="input-group has-icon-left toolbar-search">
+                <div class="input-icon"><i data-lucide="search"></i></div>
+                <input type="search" name="search" placeholder="Search by name or email…" value="{{ request('search') }}">
+            </div>
+            <div class="toolbar-filters">
+                @if(request('search'))
+                    <a href="{{ route('admin.users') }}" class="btn btn-ghost btn-sm">
+                        <i data-lucide="x"></i> Clear
+                    </a>
+                @endif
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i data-lucide="search"></i> Search
                 </button>
             </div>
-        </form>
-    </div>
-
-    <!-- Stats Strip -->
-    <div class="animate-in stagger-2" style="display:flex;gap:8px;margin-bottom:16px;">
-        <div style="flex:1;background:var(--surface);border:1px solid var(--border);padding:10px;text-align:center;">
-            <div
-                style="font-family:'Black Ops One',cursive;font-size:1.4rem;color:var(--green);text-shadow:0 0 10px var(--green);">
-                {{ $users->total() }}
-            </div>
-            <div
-                style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:1px;">
-                TOTAL</div>
         </div>
-        <div style="flex:1;background:var(--surface);border:1px solid var(--border);padding:10px;text-align:center;">
-            <div style="font-family:'Black Ops One',cursive;font-size:1.4rem;color:#fff;">
-                {{ $users->currentPage() }}/{{ $users->lastPage() }}
-            </div>
-            <div
-                style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:1px;">
-                PAGE</div>
+    </form>
+
+    {{-- Table --}}
+    @if($users->isEmpty())
+        <div class="empty-state">
+            <div class="empty-icon"><i data-lucide="users"></i></div>
+            <div class="empty-title">No users found</div>
+            <div class="empty-desc">{{ request('search') ? 'No results for "'.request('search').'". Try a different search.' : 'Users will appear here once they register.' }}</div>
         </div>
-    </div>
+    @else
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Currency</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($users as $user)
+                        <tr>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    <div class="avatar" style="background:var(--green-dim);color:var(--green);font-size:13px;font-weight:700;">
+                                        {{ strtoupper(substr($user->name, 0, 1)) }}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:600;">{{ $user->name }}</div>
+                                        <div style="font-size:12px;color:var(--text-2);">{{ $user->email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="badge badge-green">{{ $user->default_currency }}</span></td>
+                            <td>
+                                @if($user->preferences['suspended'] ?? false)
+                                    <span class="badge badge-red">Suspended</span>
+                                @else
+                                    <span class="badge badge-green">Active</span>
+                                @endif
+                            </td>
+                            <td style="color:var(--text-2);font-size:12.5px;white-space:nowrap;">{{ $user->created_at->format('d M Y') }}</td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <a href="{{ route('admin.users.show', $user->id) }}" class="btn btn-secondary btn-sm">
+                                        <i data-lucide="eye"></i> View
+                                    </a>
 
-    <!-- Users List -->
-    <div class="section-title animate-in stagger-2">REGISTERED USERS</div>
+                                    @if($user->preferences['suspended'] ?? false)
+                                        <form method="POST" action="{{ route('admin.users.unsuspend', $user->id) }}" style="display:inline;">
+                                            @csrf
+                                            <button type="submit" class="btn btn-warning-soft btn-sm">
+                                                <i data-lucide="rotate-ccw"></i> Restore
+                                            </button>
+                                        </form>
+                                    @else
+                                        <form method="POST" action="{{ route('admin.users.suspend', $user->id) }}" style="display:inline;">
+                                            @csrf
+                                            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--yellow);">
+                                                <i data-lucide="ban"></i> Suspend
+                                            </button>
+                                        </form>
+                                    @endif
 
-    @forelse($users as $index => $user)
-        <div class="cyber-card animate-in" style="animation-delay:{{ $index * 0.04 }}s;opacity:0;">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                                    <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}" id="del-user-{{ $user->id }}" style="display:inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button" class="btn btn-danger-soft btn-sm"
+                                            data-form="del-user-{{ $user->id }}"
+                                            data-title="Delete user?"
+                                            data-desc="This will permanently delete {{ addslashes($user->name) }} and all their data. This cannot be undone."
+                                            onclick="confirmAction(this.dataset.title, this.dataset.desc, this.dataset.form)">
+                                            <i data-lucide="trash-2"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
 
-                <!-- User Info -->
-                <div style="flex:1;min-width:0;">
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
-                        <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;color:var(--text);">
-                            {{ $user->name }}
-                        </span>
-                        @if ($user->preferences['suspended'] ?? false)
-                            <span class="badge badge-red">SUSPENDED</span>
-                        @else
-                            <span class="badge badge-green">ACTIVE</span>
-                        @endif
-                    </div>
-
-                    <div
-                        style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                        {{ $user->email }}
-                    </div>
-
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);">
-                            <span style="color:var(--green);">CCY</span> {{ $user->default_currency }}
-                        </div>
-                        <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);">
-                            <span style="color:var(--green);">REG</span> {{ $user->created_at->format('d M Y') }}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
-                    <a href="{{ route('admin.users.show', $user->id) }}" class="btn-outline"
-                        style="padding:5px 10px;font-size:0.6rem;">
-                        VIEW
-                    </a>
-
-                    @if ($user->preferences['suspended'] ?? false)
-                        <form method="POST" action="{{ route('admin.users.unsuspend', $user->id) }}">
-                            @csrf
-                            <button type="submit" class="btn-outline"
-                                style="padding:5px 10px;font-size:0.6rem;color:#ffcc00;border-color:rgba(255,204,0,0.4);width:100%;">
-                                RESTORE
-                            </button>
-                        </form>
-                    @else
-                        <form method="POST" action="{{ route('admin.users.suspend', $user->id) }}">
-                            @csrf
-                            <button type="submit" class="btn-danger" style="padding:5px 10px;font-size:0.6rem;">
-                                SUSPEND
-                            </button>
-                        </form>
+        {{-- Pagination --}}
+        @if($users->hasPages())
+            <div class="pagination">
+                <span>Showing {{ $users->firstItem() }}–{{ $users->lastItem() }} of {{ $users->total() }}</span>
+                <div class="pagination-pages">
+                    @if(!$users->onFirstPage())
+                        <a href="{{ $users->previousPageUrl() }}" class="page-btn">
+                            <i data-lucide="chevron-left" style="width:14px;height:14px;"></i>
+                        </a>
                     @endif
-
-                    <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}"
-                        onsubmit="return confirm('DELETE USER {{ strtoupper($user->name) }}?')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn-danger" style="padding:5px 10px;font-size:0.6rem;width:100%;">
-                            DELETE
-                        </button>
-                    </form>
+                    @foreach($users->getUrlRange(max(1,$users->currentPage()-2), min($users->lastPage(),$users->currentPage()+2)) as $page => $url)
+                        <a href="{{ $url }}" class="page-btn {{ $page == $users->currentPage() ? 'current' : '' }}">{{ $page }}</a>
+                    @endforeach
+                    @if($users->hasMorePages())
+                        <a href="{{ $users->nextPageUrl() }}" class="page-btn">
+                            <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
+                        </a>
+                    @endif
                 </div>
-
             </div>
-        </div>
-    @empty
-        <div class="cyber-card" style="text-align:center;padding:32px;">
-            <div
-                style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--text-dim);letter-spacing:2px;">
-                NO_USERS_FOUND
-            </div>
-            @if (request('search'))
-                <a href="{{ route('admin.users') }}" class="btn-outline" style="margin-top:16px;display:inline-block;">
-                    CLEAR FILTER
-                </a>
-            @endif
-        </div>
-    @endforelse
-
-    <!-- Pagination -->
-    @if ($users->hasPages())
-        <div class="pagination animate-in">
-            {{-- Previous --}}
-            @if ($users->onFirstPage())
-                <span style="opacity:0.3;">&laquo; PREV</span>
-            @else
-                <a href="{{ $users->previousPageUrl() }}">&laquo; PREV</a>
-            @endif
-
-            {{-- Pages --}}
-            @foreach ($users->getUrlRange(max(1, $users->currentPage() - 2), min($users->lastPage(), $users->currentPage() + 2)) as $page => $url)
-                @if ($page == $users->currentPage())
-                    <span class="active"><span>{{ $page }}</span></span>
-                @else
-                    <a href="{{ $url }}">{{ $page }}</a>
-                @endif
-            @endforeach
-
-            {{-- Next --}}
-            @if ($users->hasMorePages())
-                <a href="{{ $users->nextPageUrl() }}">NEXT &raquo;</a>
-            @else
-                <span style="opacity:0.3;">NEXT &raquo;</span>
-            @endif
-        </div>
+        @endif
     @endif
+
+</div>
 
 @endsection

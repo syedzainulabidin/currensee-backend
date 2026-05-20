@@ -1,220 +1,244 @@
 @extends('layouts.admin')
-@section('title', 'User — ' . $user->name)
+@section('title', $user->name)
 
 @section('content')
 
-    <!-- Back -->
-    <div class="animate-in" style="margin-bottom:16px;">
-        <a href="{{ route('admin.users') }}"
-            style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--text-dim);text-decoration:none;letter-spacing:1px;">
-            &larr; BACK_TO_USERS
-        </a>
-    </div>
+{{-- Back --}}
+<div style="margin-bottom:20px;">
+    <a href="{{ route('admin.users') }}" class="btn btn-ghost btn-sm" style="padding-left:0;">
+        <i data-lucide="arrow-left"></i> Back to Users
+    </a>
+</div>
 
-    <!-- User Profile Card -->
-    <div class="cyber-card animate-in stagger-1" style="margin-bottom:16px;">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+{{-- Profile Header --}}
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-body">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;">
 
-            <div style="flex:1;min-width:0;">
-                <div
-                    style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:6px;">
-                    USER_ID::{{ str_pad($user->id, 6, '0', STR_PAD_LEFT) }}
+            <div style="display:flex;align-items:center;gap:16px;">
+                <div class="avatar" style="width:56px;height:56px;font-size:22px;background:var(--green-dim);color:var(--green);">
+                    {{ strtoupper(substr($user->name, 0, 1)) }}
                 </div>
-                <h2
-                    style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--text);margin-bottom:4px;">
-                    {{ $user->name }}
-                </h2>
-                <div
-                    style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--green);margin-bottom:12px;">
-                    {{ $user->email }}
-                </div>
-
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    @if ($user->preferences['suspended'] ?? false)
-                        <span class="badge badge-red">SUSPENDED</span>
-                    @else
-                        <span class="badge badge-green">ACTIVE</span>
-                    @endif
-                    <span class="badge badge-yellow">{{ $user->default_currency }}</span>
-                    <span class="badge" style="color:var(--text-dim);border:1px solid rgba(255,255,255,0.1);">
-                        JOINED {{ $user->created_at->format('d M Y') }}
-                    </span>
+                <div>
+                    <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px;">{{ $user->name }}</div>
+                    <div style="font-size:13px;color:var(--text-2);margin-bottom:10px;">{{ $user->email }}</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                        @if($user->preferences['suspended'] ?? false)
+                            <span class="badge badge-red">Suspended</span>
+                        @else
+                            <span class="badge badge-green">Active</span>
+                        @endif
+                        <span class="badge badge-blue">{{ $user->default_currency }}</span>
+                        <span class="badge badge-gray">Joined {{ $user->created_at->format('d M Y') }}</span>
+                        <span class="badge badge-gray">ID #{{ str_pad($user->id, 6, '0', STR_PAD_LEFT) }}</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Quick Actions -->
-            <div style="display:flex;flex-direction:column;gap:6px;">
-                @if ($user->preferences['suspended'] ?? false)
-                    <form method="POST" action="{{ route('admin.users.unsuspend', $user->id) }}">
+            <div style="display:flex;gap:8px;align-items:center;">
+                @if($user->preferences['suspended'] ?? false)
+                    <form method="POST" action="{{ route('admin.users.unsuspend', $user->id) }}" style="display:inline;">
                         @csrf
-                        <button type="submit" class="btn-outline"
-                            style="font-size:0.65rem;padding:8px 14px;color:#ffcc00;border-color:rgba(255,204,0,0.4);">
-                            RESTORE
+                        <button type="submit" class="btn btn-warning-soft">
+                            <i data-lucide="rotate-ccw"></i> Restore Access
                         </button>
                     </form>
                 @else
-                    <form method="POST" action="{{ route('admin.users.suspend', $user->id) }}">
+                    <form method="POST" action="{{ route('admin.users.suspend', $user->id) }}" style="display:inline;">
                         @csrf
-                        <button type="submit" class="btn-danger" style="font-size:0.65rem;padding:8px 14px;">
-                            SUSPEND
+                        <button type="submit" class="btn btn-ghost" style="color:var(--yellow);">
+                            <i data-lucide="ban"></i> Suspend
                         </button>
                     </form>
                 @endif
 
-                <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}"
-                    onsubmit="return confirm('PERMANENTLY DELETE {{ strtoupper($user->name) }}?')">
+                <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}" id="del-user-detail" style="display:inline;">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="btn-danger" style="font-size:0.65rem;padding:8px 14px;width:100%;">
-                        DELETE
+                    <button type="button" class="btn btn-danger-soft"
+                        data-form="del-user-detail"
+                        data-title="Delete user account?"
+                        data-desc="This will permanently delete {{ addslashes($user->name) }} and all their data including conversions, alerts and feedback."
+                        onclick="confirmAction(this.dataset.title, this.dataset.desc, this.dataset.form)">
+                        <i data-lucide="trash-2"></i> Delete User
                     </button>
                 </form>
             </div>
 
         </div>
     </div>
+</div>
 
-    <!-- Preferences -->
-    <div class="section-title animate-in stagger-2">PREFERENCES</div>
-    <div class="cyber-card animate-in stagger-2" style="margin-bottom:16px;">
-        @php $prefs = $user->preferences ?? []; @endphp
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <div>
-                <div
-                    style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px;">
-                    DEFAULT CCY</div>
-                <div style="font-family:'Black Ops One',cursive;font-size:1.1rem;color:var(--green);">
-                    {{ $user->default_currency }}</div>
-            </div>
-            <div>
-                <div
-                    style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px;">
-                    PUSH ALERTS</div>
-                <div>
-                    @if ($prefs['notifications']['push_enabled'] ?? true)
-                        <span class="badge badge-green">ENABLED</span>
+{{-- Preferences + Stats --}}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+
+    {{-- Preferences --}}
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Preferences</div>
+        </div>
+        <div class="card-body">
+            @php $prefs = $user->preferences ?? []; @endphp
+            <div style="display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:13px;color:var(--text-2);">Default Currency</span>
+                    <span class="badge badge-green">{{ $user->default_currency }}</span>
+                </div>
+                <div style="border-top:1px solid var(--border);"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:13px;color:var(--text-2);">Push Notifications</span>
+                    @if($prefs['notifications']['push_enabled'] ?? true)
+                        <span class="badge badge-green">Enabled</span>
                     @else
-                        <span class="badge badge-red">DISABLED</span>
+                        <span class="badge badge-gray">Disabled</span>
                     @endif
                 </div>
-            </div>
-            <div>
-                <div
-                    style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px;">
-                    EMAIL ALERTS</div>
-                <div>
-                    @if ($prefs['notifications']['rate_alerts_email'] ?? false)
-                        <span class="badge badge-green">ENABLED</span>
+                <div style="border-top:1px solid var(--border);"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:13px;color:var(--text-2);">Email Rate Alerts</span>
+                    @if($prefs['notifications']['rate_alerts_email'] ?? false)
+                        <span class="badge badge-green">Enabled</span>
                     @else
-                        <span class="badge badge-gray">DISABLED</span>
+                        <span class="badge badge-gray">Disabled</span>
                     @endif
                 </div>
-            </div>
-            <div>
-                <div
-                    style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px;">
-                    NEWS DIGEST</div>
-                <div>
-                    @if ($prefs['notifications']['news_digest'] ?? false)
-                        <span class="badge badge-green">ENABLED</span>
+                <div style="border-top:1px solid var(--border);"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:13px;color:var(--text-2);">News Digest</span>
+                    @if($prefs['notifications']['news_digest'] ?? false)
+                        <span class="badge badge-green">Enabled</span>
                     @else
-                        <span class="badge badge-gray">DISABLED</span>
+                        <span class="badge badge-gray">Disabled</span>
                     @endif
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Conversions -->
-    <div class="section-title animate-in stagger-3">RECENT CONVERSIONS</div>
-    <div class="cyber-card animate-in stagger-3" style="padding:0;overflow:hidden;margin-bottom:16px;">
-        @if ($user->conversionHistories->isEmpty())
-            <div
-                style="padding:20px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--text-dim);">
-                NO_CONVERSIONS_YET
+    {{-- Quick Stats --}}
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Activity</div>
+        </div>
+        <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:13px;color:var(--text-2);">Total Conversions</span>
+                    <span style="font-size:18px;font-weight:800;color:var(--text);">{{ $user->conversionHistories->count() }}</span>
+                </div>
+                <div style="border-top:1px solid var(--border);"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:13px;color:var(--text-2);">Rate Alerts</span>
+                    <span style="font-size:18px;font-weight:800;color:var(--text);">{{ $user->rateAlerts->count() }}</span>
+                </div>
+                <div style="border-top:1px solid var(--border);"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:13px;color:var(--text-2);">Member Since</span>
+                    <span style="font-size:13px;font-weight:600;color:var(--text);">{{ $user->created_at->format('d M Y') }}</span>
+                </div>
+                <div style="border-top:1px solid var(--border);"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:13px;color:var(--text-2);">Last Active</span>
+                    <span style="font-size:13px;font-weight:600;color:var(--text);">{{ $user->updated_at->diffForHumans() }}</span>
+                </div>
             </div>
-        @else
-            <table class="cyber-table">
-                <thead>
-                    <tr>
-                        <th>PAIR</th>
-                        <th>AMOUNT</th>
-                        <th>RESULT</th>
-                        <th>DATE</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($user->conversionHistories as $c)
-                        <tr>
-                            <td>
-                                <span style="font-family:'Black Ops One',cursive;font-size:0.8rem;color:var(--green);">
-                                    {{ $c->from_currency }}/{{ $c->to_currency }}
-                                </span>
-                            </td>
-                            <td style="font-family:'Black Ops One',cursive;font-size:0.8rem;">
-                                {{ number_format($c->amount, 2) }}
-                            </td>
-                            <td style="font-family:'Black Ops One',cursive;font-size:0.8rem;color:var(--green);">
-                                {{ number_format($c->converted_amount, 2) }}
-                            </td>
-                            <td style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);">
-                                {{ $c->created_at->format('d/m H:i') }}
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @endif
+        </div>
     </div>
 
-    <!-- Rate Alerts -->
-    <div class="section-title animate-in stagger-4">RATE ALERTS</div>
-    <div class="cyber-card animate-in stagger-4" style="padding:0;overflow:hidden;margin-bottom:20px;">
-        @if ($user->rateAlerts->isEmpty())
-            <div
-                style="padding:20px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--text-dim);">
-                NO_ALERTS_SET
-            </div>
-        @else
-            <table class="cyber-table">
+</div>
+
+{{-- Recent Conversions --}}
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <div class="card-title">Recent Conversions</div>
+        <div class="card-subtitle">Last 10 conversions by this user</div>
+    </div>
+    @if($user->conversionHistories->isEmpty())
+        <div class="empty-state">
+            <div class="empty-icon"><i data-lucide="arrow-left-right"></i></div>
+            <div class="empty-title">No conversions yet</div>
+            <div class="empty-desc">This user hasn't performed any currency conversions.</div>
+        </div>
+    @else
+        <div class="table-wrap">
+            <table>
                 <thead>
                     <tr>
-                        <th>PAIR</th>
-                        <th>TARGET</th>
-                        <th>DIR</th>
-                        <th>STATUS</th>
+                        <th>Pair</th>
+                        <th>Amount</th>
+                        <th>Result</th>
+                        <th>Rate</th>
+                        <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($user->rateAlerts as $alert)
+                    @foreach($user->conversionHistories as $c)
                         <tr>
-                            <td>
-                                <span style="font-family:'Black Ops One',cursive;font-size:0.8rem;color:var(--green);">
-                                    {{ $alert->from_currency }}/{{ $alert->to_currency }}
-                                </span>
-                            </td>
-                            <td style="font-family:'Black Ops One',cursive;font-size:0.8rem;">
-                                {{ number_format($alert->target_rate, 4) }}
-                            </td>
-                            <td>
-                                <span class="badge {{ $alert->direction === 'above' ? 'badge-green' : 'badge-red' }}">
-                                    {{ strtoupper($alert->direction) }}
-                                </span>
-                            </td>
-                            <td>
-                                @if ($alert->triggered_at)
-                                    <span class="badge badge-yellow">TRIGGERED</span>
-                                @elseif($alert->is_active)
-                                    <span class="badge badge-green">ACTIVE</span>
-                                @else
-                                    <span class="badge badge-gray">OFF</span>
-                                @endif
-                            </td>
+                            <td><span class="font-mono text-green">{{ $c->from_currency }} → {{ $c->to_currency }}</span></td>
+                            <td style="font-weight:600;">{{ number_format($c->amount, 4) }}</td>
+                            <td class="text-green font-semibold">{{ number_format($c->converted_amount, 4) }}</td>
+                            <td style="color:var(--text-2);font-size:12px;" class="font-mono">{{ number_format($c->rate, 6) }}</td>
+                            <td style="color:var(--text-2);font-size:12px;white-space:nowrap;">{{ $c->created_at->format('d M Y H:i') }}</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
-        @endif
+        </div>
+    @endif
+</div>
+
+{{-- Rate Alerts --}}
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Rate Alerts</div>
+        <div class="card-subtitle">Alerts configured by this user</div>
     </div>
+    @if($user->rateAlerts->isEmpty())
+        <div class="empty-state">
+            <div class="empty-icon"><i data-lucide="bell-off"></i></div>
+            <div class="empty-title">No alerts configured</div>
+            <div class="empty-desc">This user hasn't set up any rate alerts.</div>
+        </div>
+    @else
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Pair</th>
+                        <th>Target Rate</th>
+                        <th>Direction</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($user->rateAlerts as $alert)
+                        <tr>
+                            <td><span class="font-mono text-green">{{ $alert->from_currency }}/{{ $alert->to_currency }}</span></td>
+                            <td style="font-weight:600;" class="font-mono">{{ number_format($alert->target_rate, 6) }}</td>
+                            <td>
+                                @if($alert->direction === 'above')
+                                    <span class="badge badge-green">▲ Above</span>
+                                @else
+                                    <span class="badge badge-red">▼ Below</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($alert->triggered_at)
+                                    <span class="badge badge-yellow">Triggered</span>
+                                @elseif($alert->is_active)
+                                    <span class="badge badge-green">Watching</span>
+                                @else
+                                    <span class="badge badge-gray">Inactive</span>
+                                @endif
+                            </td>
+                            <td style="color:var(--text-2);font-size:12px;white-space:nowrap;">{{ $alert->created_at->format('d M Y') }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+</div>
 
 @endsection

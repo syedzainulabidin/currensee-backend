@@ -3,196 +3,277 @@
 
 @section('content')
 
-    <!-- Header -->
-    <div class="animate-in" style="margin-bottom:20px;">
-        <div
-            style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:var(--text-dim);letter-spacing:2px;margin-bottom:4px;">
-            &gt; FEEDBACK_INBOX
+<div class="page-header">
+    <div>
+        <div class="page-title">Feedback</div>
+        <div class="page-subtitle">User-submitted feedback and bug reports</div>
+    </div>
+</div>
+
+{{-- Status Summary Cards --}}
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;">
+
+    <a href="{{ route('admin.feedback', ['status' => 'new'] + (request('type') ? ['type' => request('type')] : [])) }}" style="text-decoration:none;">
+        <div class="stat-card" style="{{ request('status') === 'new' ? 'border-color:rgba(239,68,68,0.4);' : '' }}">
+            <div>
+                <div class="stat-card-value text-red">{{ $counts['new'] }}</div>
+                <div class="stat-card-label">New</div>
+                <div class="stat-card-delta text-dim">Awaiting review</div>
+            </div>
+            <div class="stat-card-icon" style="background:var(--red-dim);">
+                <i data-lucide="inbox" style="color:var(--red);width:18px;height:18px;"></i>
+            </div>
         </div>
-        <h1 style="font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--text);">
-            Feedback
-        </h1>
+    </a>
+
+    <a href="{{ route('admin.feedback', ['status' => 'reviewed'] + (request('type') ? ['type' => request('type')] : [])) }}" style="text-decoration:none;">
+        <div class="stat-card" style="{{ request('status') === 'reviewed' ? 'border-color:rgba(245,158,11,0.4);' : '' }}">
+            <div>
+                <div class="stat-card-value text-yellow">{{ $counts['reviewed'] }}</div>
+                <div class="stat-card-label">Reviewed</div>
+                <div class="stat-card-delta text-dim">In progress</div>
+            </div>
+            <div class="stat-card-icon" style="background:var(--yellow-dim);">
+                <i data-lucide="eye" style="color:var(--yellow);width:18px;height:18px;"></i>
+            </div>
+        </div>
+    </a>
+
+    <a href="{{ route('admin.feedback', ['status' => 'resolved'] + (request('type') ? ['type' => request('type')] : [])) }}" style="text-decoration:none;">
+        <div class="stat-card" style="{{ request('status') === 'resolved' ? 'border-color:var(--green-border);' : '' }}">
+            <div>
+                <div class="stat-card-value text-green">{{ $counts['resolved'] }}</div>
+                <div class="stat-card-label">Resolved</div>
+                <div class="stat-card-delta text-dim">Completed</div>
+            </div>
+            <div class="stat-card-icon" style="background:var(--green-dim);">
+                <i data-lucide="check-circle" style="color:var(--green);width:18px;height:18px;"></i>
+            </div>
+        </div>
+    </a>
+
+</div>
+
+<div class="card">
+
+    {{-- Toolbar --}}
+    <div class="toolbar">
+        <div class="toolbar-filters">
+            <a href="{{ route('admin.feedback', request('status') ? ['status' => request('status')] : []) }}"
+               class="filter-chip {{ !request('type') ? 'active' : '' }}">All Types</a>
+            <a href="{{ route('admin.feedback', array_merge(request()->only('status'), ['type' => 'bug'])) }}"
+               class="filter-chip {{ request('type') === 'bug' ? 'active' : '' }}">
+                <i data-lucide="bug" style="width:11px;height:11px;"></i> Bug
+            </a>
+            <a href="{{ route('admin.feedback', array_merge(request()->only('status'), ['type' => 'feature'])) }}"
+               class="filter-chip {{ request('type') === 'feature' ? 'active' : '' }}">
+                <i data-lucide="lightbulb" style="width:11px;height:11px;"></i> Feature
+            </a>
+            <a href="{{ route('admin.feedback', array_merge(request()->only('status'), ['type' => 'suggestion'])) }}"
+               class="filter-chip {{ request('type') === 'suggestion' ? 'active' : '' }}">
+                <i data-lucide="message-circle" style="width:11px;height:11px;"></i> Suggestion
+            </a>
+            <a href="{{ route('admin.feedback', array_merge(request()->only('status'), ['type' => 'general'])) }}"
+               class="filter-chip {{ request('type') === 'general' ? 'active' : '' }}">General</a>
+            <a href="{{ route('admin.feedback', array_merge(request()->only('status'), ['type' => 'other'])) }}"
+               class="filter-chip {{ request('type') === 'other' ? 'active' : '' }}">Other</a>
+        </div>
+
+        @if(request('status') || request('type'))
+            <a href="{{ route('admin.feedback') }}" class="btn btn-ghost btn-sm" style="margin-left:auto;">
+                <i data-lucide="x"></i> Clear filters
+            </a>
+        @endif
     </div>
 
-    <!-- Status Counts -->
-    <div class="animate-in stagger-1" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
-        <a href="{{ route('admin.feedback', ['status' => 'new']) }}" style="text-decoration:none;">
-            <div
-                style="background:var(--surface);border:1px solid {{ request('status') === 'new' ? 'var(--border-hot)' : 'var(--border)' }};padding:10px;text-align:center;transition:all 0.2s;">
-                <div
-                    style="font-family:'Black Ops One',cursive;font-size:1.3rem;color:#ff4444;text-shadow:0 0 10px rgba(255,68,68,0.4);">
-                    {{ $counts['new'] }}
-                </div>
-                <div
-                    style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--text-dim);letter-spacing:1px;">
-                    NEW</div>
-            </div>
-        </a>
-        <a href="{{ route('admin.feedback', ['status' => 'reviewed']) }}" style="text-decoration:none;">
-            <div
-                style="background:var(--surface);border:1px solid {{ request('status') === 'reviewed' ? 'var(--border-hot)' : 'var(--border)' }};padding:10px;text-align:center;transition:all 0.2s;">
-                <div style="font-family:'Black Ops One',cursive;font-size:1.3rem;color:#ffcc00;">
-                    {{ $counts['reviewed'] }}
-                </div>
-                <div
-                    style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--text-dim);letter-spacing:1px;">
-                    REVIEWED</div>
-            </div>
-        </a>
-        <a href="{{ route('admin.feedback', ['status' => 'resolved']) }}" style="text-decoration:none;">
-            <div
-                style="background:var(--surface);border:1px solid {{ request('status') === 'resolved' ? 'var(--border-hot)' : 'var(--border)' }};padding:10px;text-align:center;transition:all 0.2s;">
-                <div
-                    style="font-family:'Black Ops One',cursive;font-size:1.3rem;color:var(--green);text-shadow:0 0 10px var(--green);">
-                    {{ $counts['resolved'] }}
-                </div>
-                <div
-                    style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--text-dim);letter-spacing:1px;">
-                    RESOLVED</div>
-            </div>
-        </a>
-    </div>
+    {{-- Table --}}
+    @if($feedback->isEmpty())
+        <div class="empty-state">
+            <div class="empty-icon"><i data-lucide="message-square"></i></div>
+            <div class="empty-title">No feedback found</div>
+            <div class="empty-desc">{{ request('status') || request('type') ? 'Try changing the filters above.' : 'Feedback submitted by users will appear here.' }}</div>
+        </div>
+    @else
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Type</th>
+                        <th>Rating</th>
+                        <th>Message</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($feedback as $item)
+                        <tr style="{{ $item->status === 'resolved' ? 'opacity:0.6;' : '' }}">
+                            <td>
+                                <div style="font-weight:600;font-size:13px;">{{ $item->user?->name ?? 'Guest' }}</div>
+                                @if($item->user)
+                                    <div style="font-size:11.5px;color:var(--text-2);">{{ $item->user->email }}</div>
+                                @endif
+                            </td>
+                            <td>
+                                @php
+                                    $typeMap = [
+                                        'bug'        => ['label' => 'Bug',        'class' => 'badge-red'],
+                                        'feature'    => ['label' => 'Feature',    'class' => 'badge-blue'],
+                                        'suggestion' => ['label' => 'Suggestion', 'class' => 'badge-yellow'],
+                                        'general'    => ['label' => 'General',    'class' => 'badge-gray'],
+                                        'other'      => ['label' => 'Other',      'class' => 'badge-gray'],
+                                    ];
+                                    $typeInfo = $typeMap[$item->type] ?? ['label' => ucfirst($item->type), 'class' => 'badge-gray'];
+                                @endphp
+                                <span class="badge {{ $typeInfo['class'] }}">{{ $typeInfo['label'] }}</span>
+                            </td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:2px;">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <span style="font-size:12px;color:{{ $i <= ($item->rating ?? 0) ? 'var(--yellow)' : 'var(--surface3)' }};">★</span>
+                                    @endfor
+                                </div>
+                            </td>
+                            <td style="max-width:260px;">
+                                <div style="font-size:13px;line-height:1.5;color:var(--text-2);">{{ Str::limit($item->message, 60) }}</div>
+                                @if(strlen($item->message) > 60)
+                                    <button type="button" class="btn btn-ghost btn-sm"
+                                        style="padding:2px 0;font-size:11.5px;color:var(--green);margin-top:3px;"
+                                        onclick="openMsgModal(this)"
+                                        data-message="{{ e($item->message) }}"
+                                        data-user="{{ $item->user?->name ?? 'Guest' }}"
+                                        data-type="{{ $typeInfo['label'] }}"
+                                        data-rating="{{ $item->rating ?? 0 }}"
+                                        data-date="{{ $item->created_at->format('d M Y, H:i') }}">
+                                        Read full message →
+                                    </button>
+                                @endif
+                            </td>
+                            <td>
+                                @if($item->status === 'new')
+                                    <span class="badge badge-red">New</span>
+                                @elseif($item->status === 'reviewed')
+                                    <span class="badge badge-yellow">Reviewed</span>
+                                @else
+                                    <span class="badge badge-green">Resolved</span>
+                                @endif
+                            </td>
+                            <td style="color:var(--text-2);font-size:12px;white-space:nowrap;">{{ $item->created_at->format('d M Y') }}</td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    @if($item->status !== 'reviewed')
+                                        <form method="POST" action="{{ route('admin.feedback.status', $item->id) }}" style="display:inline;">
+                                            @csrf
+                                            <input type="hidden" name="status" value="reviewed">
+                                            <button type="submit" class="btn btn-warning-soft btn-sm">Review</button>
+                                        </form>
+                                    @endif
 
-    <!-- Filter Bar -->
-    <div class="animate-in stagger-2" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-        <a href="{{ route('admin.feedback') }}"
-            class="{{ !request('status') && !request('type') ? 'btn-green' : 'btn-outline' }}"
-            style="font-size:0.6rem;padding:7px 12px;">ALL</a>
-        <a href="{{ route('admin.feedback', ['type' => 'bug']) }}"
-            class="{{ request('type') === 'bug' ? 'btn-green' : 'btn-outline' }}"
-            style="font-size:0.6rem;padding:7px 12px;">BUGS</a>
-        <a href="{{ route('admin.feedback', ['type' => 'suggestion']) }}"
-            class="{{ request('type') === 'suggestion' ? 'btn-green' : 'btn-outline' }}"
-            style="font-size:0.6rem;padding:7px 12px;">SUGGESTIONS</a>
-        <a href="{{ route('admin.feedback', ['type' => 'general']) }}"
-            class="{{ request('type') === 'general' ? 'btn-green' : 'btn-outline' }}"
-            style="font-size:0.6rem;padding:7px 12px;">GENERAL</a>
-    </div>
+                                    @if($item->status !== 'resolved')
+                                        <form method="POST" action="{{ route('admin.feedback.status', $item->id) }}" style="display:inline;">
+                                            @csrf
+                                            <input type="hidden" name="status" value="resolved">
+                                            <button type="submit" class="btn btn-secondary btn-sm">Resolve</button>
+                                        </form>
+                                    @endif
 
-    <!-- Feedback List -->
-    <div class="section-title animate-in stagger-2">SUBMISSIONS</div>
+                                    <form method="POST" action="{{ route('admin.feedback.destroy', $item->id) }}" id="del-fb-{{ $item->id }}" style="display:inline;">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="button" class="btn btn-danger-soft btn-sm"
+                                            data-form="del-fb-{{ $item->id }}"
+                                            data-title="Delete feedback?"
+                                            data-desc="This feedback entry will be permanently removed."
+                                            onclick="confirmAction(this.dataset.title, this.dataset.desc, this.dataset.form)">
+                                            <i data-lucide="trash-2"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
 
-    @forelse($feedback as $index => $item)
-        <div class="cyber-card animate-in"
-            style="animation-delay:{{ $index * 0.04 }}s;opacity:0;padding:14px;
-    {{ $item->status === 'new' ? 'border-color:rgba(255,68,68,0.35);' : '' }}
-    {{ $item->status === 'resolved' ? 'opacity:0.7;' : '' }}
-">
-
-            <!-- Top Row -->
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
-                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-                    <!-- Type Badge -->
-                    @if ($item->type === 'bug')
-                        <span class="badge badge-red">🐛 BUG</span>
-                    @elseif($item->type === 'suggestion')
-                        <span class="badge badge-yellow">💡 SUGGESTION</span>
-                    @else
-                        <span class="badge badge-gray">GENERAL</span>
+        {{-- Pagination --}}
+        @if($feedback->hasPages())
+            <div class="pagination">
+                <span>Showing {{ $feedback->firstItem() }}–{{ $feedback->lastItem() }} of {{ $feedback->total() }}</span>
+                <div class="pagination-pages">
+                    @if(!$feedback->onFirstPage())
+                        <a href="{{ $feedback->previousPageUrl() }}" class="page-btn">
+                            <i data-lucide="chevron-left" style="width:14px;height:14px;"></i>
+                        </a>
                     @endif
-
-                    <!-- Status Badge -->
-                    @if ($item->status === 'new')
-                        <span class="badge badge-red">NEW</span>
-                    @elseif($item->status === 'reviewed')
-                        <span class="badge badge-yellow">REVIEWED</span>
-                    @else
-                        <span class="badge badge-green">RESOLVED</span>
+                    @foreach($feedback->getUrlRange(max(1,$feedback->currentPage()-2), min($feedback->lastPage(),$feedback->currentPage()+2)) as $page => $url)
+                        <a href="{{ $url }}" class="page-btn {{ $page == $feedback->currentPage() ? 'current' : '' }}">{{ $page }}</a>
+                    @endforeach
+                    @if($feedback->hasMorePages())
+                        <a href="{{ $feedback->nextPageUrl() }}" class="page-btn">
+                            <i data-lucide="chevron-right" style="width:14px;height:14px;"></i>
+                        </a>
                     @endif
                 </div>
-
-                <!-- Date -->
-                <div style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);flex-shrink:0;">
-                    {{ $item->created_at->format('d M Y') }}
-                </div>
             </div>
-
-            <!-- Message -->
-            <div
-                style="font-size:0.82rem;color:var(--text);line-height:1.5;margin-bottom:10px;padding:10px;background:var(--surface2);border-left:2px solid var(--border);">
-                {{ $item->message }}
-            </div>
-
-            <!-- User -->
-            <div
-                style="font-family:'Share Tech Mono',monospace;font-size:0.55rem;color:var(--text-dim);margin-bottom:12px;">
-                FROM <span style="color:var(--text);">{{ $item->user?->name ?? 'GUEST' }}</span>
-                @if ($item->user)
-                    &nbsp;·&nbsp; {{ $item->user->email }}
-                @endif
-            </div>
-
-            <!-- Actions -->
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                @if ($item->status !== 'reviewed')
-                    <form method="POST" action="{{ route('admin.feedback.status', $item->id) }}">
-                        @csrf
-                        <input type="hidden" name="status" value="reviewed">
-                        <button type="submit" class="btn-outline"
-                            style="padding:5px 10px;font-size:0.6rem;color:#ffcc00;border-color:rgba(255,204,0,0.4);">
-                            MARK REVIEWED
-                        </button>
-                    </form>
-                @endif
-
-                @if ($item->status !== 'resolved')
-                    <form method="POST" action="{{ route('admin.feedback.status', $item->id) }}">
-                        @csrf
-                        <input type="hidden" name="status" value="resolved">
-                        <button type="submit" class="btn-outline" style="padding:5px 10px;font-size:0.6rem;">
-                            RESOLVE
-                        </button>
-                    </form>
-                @endif
-
-                <form method="POST" action="{{ route('admin.feedback.destroy', $item->id) }}"
-                    onsubmit="return confirm('DELETE THIS FEEDBACK?')">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn-danger" style="padding:5px 10px;font-size:0.6rem;">
-                        DELETE
-                    </button>
-                </form>
-            </div>
-
-        </div>
-    @empty
-        <div class="cyber-card" style="text-align:center;padding:40px;">
-            <div
-                style="font-family:'Share Tech Mono',monospace;font-size:0.65rem;color:var(--text-dim);letter-spacing:2px;">
-                NO_FEEDBACK_FOUND
-            </div>
-            @if (request('status') || request('type'))
-                <a href="{{ route('admin.feedback') }}" class="btn-outline" style="margin-top:16px;display:inline-block;">
-                    CLEAR FILTER
-                </a>
-            @endif
-        </div>
-    @endforelse
-
-    <!-- Pagination -->
-    @if ($feedback->hasPages())
-        <div class="pagination animate-in">
-            @if ($feedback->onFirstPage())
-                <span style="opacity:0.3;">&laquo; PREV</span>
-            @else
-                <a href="{{ $feedback->previousPageUrl() }}">&laquo; PREV</a>
-            @endif
-
-            @foreach ($feedback->getUrlRange(max(1, $feedback->currentPage() - 2), min($feedback->lastPage(), $feedback->currentPage() + 2)) as $page => $url)
-                @if ($page == $feedback->currentPage())
-                    <span class="active"><span>{{ $page }}</span></span>
-                @else
-                    <a href="{{ $url }}">{{ $page }}</a>
-                @endif
-            @endforeach
-
-            @if ($feedback->hasMorePages())
-                <a href="{{ $feedback->nextPageUrl() }}">NEXT &raquo;</a>
-            @else
-                <span style="opacity:0.3;">NEXT &raquo;</span>
-            @endif
-        </div>
+        @endif
     @endif
+
+</div>
+
+{{-- Message Viewer Modal --}}
+<div class="modal-overlay" id="msgModal" onclick="if(event.target===this)closeMsgModal()">
+    <div class="modal" style="max-width:520px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;">
+            <div>
+                <div style="font-size:11px;color:var(--text-2);margin-bottom:4px;" id="msgMeta"></div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;" id="msgBadges"></div>
+            </div>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="closeMsgModal()" style="flex-shrink:0;padding:4px 6px;">
+                <i data-lucide="x" style="width:15px;height:15px;"></i>
+            </button>
+        </div>
+
+        <div id="msgBody"
+             style="font-size:14px;line-height:1.7;color:var(--text);background:var(--surface2);border-radius:8px;padding:16px;white-space:pre-wrap;word-break:break-word;max-height:360px;overflow-y:auto;"></div>
+
+        <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="closeMsgModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+function openMsgModal(btn) {
+    const message = btn.dataset.message;
+    const user    = btn.dataset.user;
+    const type    = btn.dataset.type;
+    const rating  = parseInt(btn.dataset.rating) || 0;
+    const date    = btn.dataset.date;
+
+    document.getElementById('msgMeta').textContent = user + ' · ' + date;
+
+    const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+    document.getElementById('msgBadges').innerHTML =
+        `<span class="badge badge-gray">${type}</span>` +
+        (rating ? `<span style="font-size:13px;color:var(--yellow);letter-spacing:1px;">${stars}</span>` : '');
+
+    document.getElementById('msgBody').textContent = message;
+    document.getElementById('msgModal').classList.add('show');
+    lucide.createIcons();
+}
+
+function closeMsgModal() {
+    document.getElementById('msgModal').classList.remove('show');
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeMsgModal();
+});
+</script>
+@endpush
 
 @endsection
