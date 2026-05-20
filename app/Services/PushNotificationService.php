@@ -119,7 +119,6 @@ class PushNotificationService
     }
 }
 
-function base64url_encode(string $data): string
-{
+function base64url_encode(string $data): string{
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
 }
