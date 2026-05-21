@@ -36,10 +36,12 @@ class AuthController extends Controller
         $token = $user->createToken('app_token')->plainTextToken;
 
         // Send welcome email (never block registration if mail fails)
+        error_log('[MAIL] Attempting to send welcome email to: ' . $user->email . ' via mailer: ' . config('mail.default'));
         try {
             Mail::to($user->email)->send(new WelcomeMail($user));
+            error_log('[MAIL] Welcome email sent successfully to: ' . $user->email);
         } catch (\Throwable $e) {
-            Log::error('Welcome email failed: ' . $e->getMessage());
+            error_log('[MAIL] Welcome email FAILED: ' . $e->getMessage());
         }
 
         return response()->json([
