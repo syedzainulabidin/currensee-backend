@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -34,10 +35,12 @@ class AuthController extends Controller
 
         $token = $user->createToken('app_token')->plainTextToken;
 
-        // Send welcome email (silently — never block registration if mail fails)
+        // Send welcome email (never block registration if mail fails)
         try {
             Mail::to($user->email)->send(new WelcomeMail($user));
-        } catch (\Throwable) {}
+        } catch (\Throwable $e) {
+            Log::error('Welcome email failed: ' . $e->getMessage());
+        }
 
         return response()->json([
             'user'  => $user,
@@ -120,7 +123,7 @@ class AuthController extends Controller
 
         // Send welcome email only to new users
         if ($isNew) {
-            try { Mail::to($user->email)->send(new WelcomeMail($user)); } catch (\Throwable) {}
+            try { Mail::to($user->email)->send(new WelcomeMail($user)); } catch (\Throwable $e) { Log::error('Welcome email failed: ' . $e->getMessage()); }
         }
 
         return response()->json(['user' => $user, 'token' => $token]);
